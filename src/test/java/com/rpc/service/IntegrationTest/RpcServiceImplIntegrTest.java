@@ -1,5 +1,12 @@
-package com.rpc.service.UnitTesting;
+package com.rpc.service.IntegrationTest;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.rpc.service.model.DataWrapper;
+import com.rpc.service.model.ItemData;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,6 +21,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
@@ -33,26 +43,41 @@ public class RpcServiceImplIntegrTest {
 
     private MockMvc mvc;
 
+    List<ItemData> itemData;
+    ObjectMapper objectMapper;
+    DataWrapper<ItemData>  dataWrapper;
+
     @Before
     public void setup(){
-
         this.mvc = MockMvcBuilders.webAppContextSetup(wac).build();
+
+        itemData = new ArrayList<>();
+        itemData.add(new ItemData("id_sample1","numId1","Sochi","as1","None","asd33"));
+        itemData.add(new ItemData("id_sample2","numId2","3245.456","as2","Nan","asd2s34"));
+        itemData.add(new ItemData("id_sample3","numId3","New York","as3","None","asd35d"));
+
+        objectMapper = new ObjectMapper();
+        dataWrapper = new DataWrapper<>(itemData);
+
     }
 
     @Test
     public void countWorkingSensorsIntgrTest_passValidDataReturnOk() throws Exception {
-        assertNotNull(wac);
 
-        String validData = "[{\"id\":\"1\",\"jsonrpc\":\"2.0\",\"method\":\"countWorkingSensors\",\"params\":{\"data\":[" +
-                "{\"id_sample\":\"76rtw\",\"num_id\":\"ffg#er111\",\"id_location\":\"Sochi\",\"id_signal_par\":\"0xcv11cs1\",\"id_detected\":\"None\",\"id_class_det\":\"req111\"}," +
-                "{\"id_sample\":\"76rtw\",\"num_id\":\"ffg#er112\",\"id_location\":\"987.654\",\"id_signal_par\":\"0xcv11cs1\",\"id_detected\":\"None\",\"id_class_det\":\"req111\"}" +
-                "]}}]";
+        JsonNode rootNode = objectMapper.createObjectNode();
 
-        String expectedResult = "[{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"result\":[{\"location\":\"987.654\",\"numberOfOkSensors\":1,\"numberOfBrokenSensors\":0},{\"location\":\"Sochi\",\"numberOfOkSensors\":1,\"numberOfBrokenSensors\":0}]}\n" +
-                "]";
+        ((ObjectNode) rootNode).put("id", 1);
+        ((ObjectNode) rootNode).put("jsonrpc", "2.0");
+        ((ObjectNode) rootNode).put("method", "countWorkingSensors");
+
+        JsonNode node = objectMapper.convertValue(dataWrapper, JsonNode.class);
+        ((ObjectNode) rootNode).put("params", node);
+        String validJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode);
+
+        String expectedResult = "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":[{\"location\":\"New York\",\"numberOfOkSensors\":1,\"numberOfBrokenSensors\":0},{\"location\":\"Sochi\",\"numberOfOkSensors\":1,\"numberOfBrokenSensors\":0},{\"location\":\"3245.456\",\"numberOfOkSensors\":0,\"numberOfBrokenSensors\":1}]}\n";
 
         MvcResult result = this.mvc.perform(post("/service")
-                .content(validData))
+                .content(validJson))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andReturn();
@@ -73,33 +98,40 @@ public class RpcServiceImplIntegrTest {
     }
     @Test
     public void countWorkingSensorsIntgrTest_wrongMethodNamea() throws Exception {
-        assertNotNull(wac);
-        String notSoVlidData = "[{\"id\":\"1\",\"jsonrpc\":\"2.0\",\"method\":\"WRONG_METHOD_NAME\",\"params\":{\"data\":[" +
-                "{\"id_sample\":\"76rtw\",\"num_id\":\"ffg#er111\",\"id_location\":\"Sochi\",\"id_signal_par\":\"0xcv11cs1\",\"id_detected\":\"None\",\"id_class_det\":\"req111\"}," +
-                "{\"id_sample\":\"76rtw\",\"num_id\":\"ffg#er112\",\"id_location\":\"987.654\",\"id_signal_par\":\"0xcv11cs1\",\"id_detected\":\"None\",\"id_class_det\":\"req111\"}" +
-                "]}}]";
-        String expectedResult ="[{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"error\":{\"code\":-32601,\"message\":\"method not found\"}}\n" +
-                "]";
+        JsonNode rootNode = objectMapper.createObjectNode();
+
+        ((ObjectNode) rootNode).put("id", 1);
+        ((ObjectNode) rootNode).put("jsonrpc", "2.0");
+        ((ObjectNode) rootNode).put("method", "WRONG_METHOD_NAME");
+
+        JsonNode node = objectMapper.convertValue(dataWrapper, JsonNode.class);
+        ((ObjectNode) rootNode).put("params", node);
+        String notSoValidData = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode);
+
+        String expectedResult ="{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"method not found\"}}\n";
+
 
         MvcResult result = this.mvc.perform(post("/service")
-                .content(notSoVlidData))
+                .content(notSoValidData))
                 .andDo(print())
-                 .andExpect(status().is5xxServerError())
+                 .andExpect(status().is4xxClientError())
                 .andReturn();
         assertEquals(expectedResult,result.getResponse().getContentAsString());
     }
 
     @Test
     public void wrappedCountWorkingSensorsIntgrTest_passValidDataReturnOk() throws Exception {
-        assertNotNull(wac);
+        JsonNode rootNode = objectMapper.createObjectNode();
 
-        String validData = "[{\"id\":\"1\",\"jsonrpc\":\"2.0\",\"method\":\"wrappedCountWorkingSensors\",\"params\":{\"data\":[" +
-                "{\"id_sample\":\"76rtw\",\"num_id\":\"ffg#er111\",\"id_location\":\"Sochi\",\"id_signal_par\":\"0xcv11cs1\",\"id_detected\":\"None\",\"id_class_det\":\"req111\"}," +
-                "{\"id_sample\":\"76rtw\",\"num_id\":\"ffg#er112\",\"id_location\":\"987.654\",\"id_signal_par\":\"0xcv11cs1\",\"id_detected\":\"None\",\"id_class_det\":\"req111\"}" +
-                "]}}]";
+        ((ObjectNode) rootNode).put("id", 1);
+        ((ObjectNode) rootNode).put("jsonrpc", "2.0");
+        ((ObjectNode) rootNode).put("method", "wrappedCountWorkingSensors");
 
-        String expectedResult = "[{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"result\":{\"data\":[{\"location\":\"987.654\",\"numberOfOkSensors\":1,\"numberOfBrokenSensors\":0},{\"location\":\"Sochi\",\"numberOfOkSensors\":1,\"numberOfBrokenSensors\":0}]}}\n" +
-                "]";
+        JsonNode node = objectMapper.convertValue(dataWrapper, JsonNode.class);
+        ((ObjectNode) rootNode).put("params", node);
+        String validData = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode);
+
+        String expectedResult = "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"data\":[{\"location\":\"New York\",\"numberOfOkSensors\":1,\"numberOfBrokenSensors\":0},{\"location\":\"Sochi\",\"numberOfOkSensors\":1,\"numberOfBrokenSensors\":0},{\"location\":\"3245.456\",\"numberOfOkSensors\":0,\"numberOfBrokenSensors\":1}]}}\n";
 
         MvcResult result = this.mvc.perform(post("/service")
                 .content(validData))
