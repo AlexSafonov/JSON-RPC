@@ -8,12 +8,10 @@ import com.rpc.service.service.RpcService;
 import com.rpc.service.service.RpcServiceImpl;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class RpcServiceImplUnitTest {
