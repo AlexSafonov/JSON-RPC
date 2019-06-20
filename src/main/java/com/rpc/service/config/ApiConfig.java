@@ -9,7 +9,6 @@ public class ApiConfig {
 
     @Bean
     public static AutoJsonRpcServiceImplExporter autoJsonRpcServiceImplExporter() {
-        AutoJsonRpcServiceImplExporter exp = new AutoJsonRpcServiceImplExporter();
-        return exp;
+        return new AutoJsonRpcServiceImplExporter();
     }
 }
