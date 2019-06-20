@@ -6,6 +6,7 @@ Accept json POST to /service endpoint.
 Excepted method names: countWorkingSensors, wrappedCountWorkingSensors.
 
 Accept POST json example:
+```json
 [
     {
         "id": "1",
@@ -41,8 +42,9 @@ Accept POST json example:
         }
     }
 ]
-
+```
 countWorkingSensors method will return : 
+```json
 [
     {
         "jsonrpc": "2.0",
@@ -61,8 +63,9 @@ countWorkingSensors method will return :
         ]
     }
 ]
-
+```
 wrappedCountWorkingSensors will return:
+```json
 [
     {
         "jsonrpc": "2.0",
@@ -83,4 +86,5 @@ wrappedCountWorkingSensors will return:
         }
     }
 ]
+```
 
